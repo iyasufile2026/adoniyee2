@@ -3,758 +3,461 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 5 — Your Strength</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="/_sdk/element_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&amp;family=Quicksand:wght@300;400;500&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&amp;family=Dancing+Script:wght@400;600&amp;display=swap" rel="stylesheet">
   <style>
-html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
 * { box-sizing: border-box; }
 
-.scene-container {
+.scene-canvas {
+  position: absolute; inset: 0;
   width: 100%; height: 100%;
-  position: relative; overflow: hidden;
-  font-family: 'Cormorant Garamond', serif;
 }
 
-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+/* Stick figure styles */
+.stick-figure {
+  position: absolute;
+  bottom: 38%;
+  transition: opacity 1.5s ease;
+}
 
-.text-overlay {
-  position: absolute; width: 100%; text-align: center;
-  z-index: 10; opacity: 0; transition: opacity 1.5s ease;
+.stick-head {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid;
+  margin: 0 auto 2px;
+}
+
+.stick-body { width: 2.5px; height: 28px; margin: 0 auto; }
+.stick-arms { position: relative; height: 20px; width: 30px; margin: -18px auto 0; }
+.stick-arm-l, .stick-arm-r {
+  position: absolute; top: 0;
+  width: 2.5px; height: 16px;
+  transform-origin: top center;
+}
+.stick-arm-l { left: 4px; transform: rotate(30deg); }
+.stick-arm-r { right: 4px; transform: rotate(-30deg); }
+.stick-legs { position: relative; height: 24px; width: 20px; margin: 0 auto; }
+.stick-leg-l, .stick-leg-r {
+  position: absolute; top: 0;
+  width: 2.5px; height: 22px;
+  transform-origin: top center;
+}
+.stick-leg-l { left: 3px; }
+.stick-leg-r { right: 3px; }
+
+/* Heart glow */
+.heart-container {
+  position: absolute;
+  top: -8px; left: 50%;
+  transform: translateX(-50%);
+  width: 20px; height: 20px;
+}
+
+.glass-heart {
+  width: 20px; height: 20px;
+  position: relative;
+}
+
+.heart-shape {
+  font-size: 20px;
+  filter: drop-shadow(0 0 6px rgba(255,150,150,0.8));
+  color: rgba(255,130,140,0.7);
+  transition: filter 2s ease, color 2s ease;
+  line-height: 1;
+}
+
+.heart-crack {
+  position: absolute;
+  top: 5px; left: 8px;
+  width: 1.5px; height: 10px;
+  background: rgba(255,255,255,0.6);
+  transform: rotate(15deg);
+  box-shadow: 0 0 3px rgba(255,255,255,0.4);
+}
+.heart-crack2 {
+  position: absolute;
+  top: 7px; left: 11px;
+  width: 1px; height: 7px;
+  background: rgba(255,255,255,0.4);
+  transform: rotate(-20deg);
+}
+
+/* Particles */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Petal */
+.petal {
+  position: absolute;
+  width: 8px; height: 12px;
+  border-radius: 50% 50% 50% 0;
+  opacity: 0;
   pointer-events: none;
 }
-.text-overlay.visible { opacity: 1; }
 
-.scene-text {
-  color: #f5e6d8; font-size: clamp(18px, 5vw, 28px);
-  font-weight: 300; letter-spacing: 0.05em;
-  text-shadow: 0 0 30px rgba(255,200,170,0.5), 0 0 60px rgba(255,150,120,0.2);
-  line-height: 1.6; padding: 0 10%;
-  font-family: 'Cormorant Garamond', serif; font-style: italic;
-}
-
-.miss-text {
-  color: #e8c4b0; font-size: clamp(14px, 3.5vw, 20px);
-  font-weight: 300; letter-spacing: 0.1em; text-transform: uppercase;
-  text-shadow: 0 0 20px rgba(255,180,150,0.4);
-  font-family: 'Quicksand', sans-serif;
+/* Letter */
+.letter-container {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 2s ease;
+  overflow-y: auto;
+  padding: 40px 20px;
 }
 
-.glass-card {
-  position: absolute; z-index: 15; opacity: 0;
-  background: linear-gradient(135deg, rgba(255,240,230,0.12), rgba(255,200,180,0.06));
-  border: 1px solid rgba(255,220,200,0.2);
-  border-radius: 20px; padding: 8% 6%;
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 0 60px rgba(255,180,150,0.15), inset 0 0 40px rgba(255,200,170,0.05);
-  transition: opacity 2s ease; text-align: center;
-  left: 10%; right: 10%; top: 50%; transform: translateY(-50%);
+.letter-scroll {
+  max-width: 580px;
+  width: 100%;
+  padding: 40px 30px 60px;
 }
-.glass-card.visible { opacity: 1; }
 
-.glass-title {
-  font-family: 'Cormorant Garamond', serif; font-size: clamp(28px, 7vw, 44px);
-  color: #f8e0d0; font-weight: 300; margin-bottom: 4%;
-  text-shadow: 0 0 40px rgba(255,200,170,0.6);
+.letter-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 32px;
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: opacity 1.5s ease 0.5s, transform 1.5s ease 0.5s;
 }
-.glass-subtitle {
-  font-family: 'Quicksand', sans-serif; font-size: clamp(12px, 3vw, 16px);
-  color: #e0c0a8; font-weight: 300; letter-spacing: 0.08em; line-height: 1.8;
-}
-.glass-divider {
-  width: 40%; height: 1px; margin: 5% auto;
-  background: linear-gradient(90deg, transparent, rgba(255,200,170,0.4), transparent);
-}
-.glass-content {
-  max-height: 60vh; overflow-y: auto; padding: 2% 0;
-  font-family: 'Cormorant Garamond', serif; font-size: clamp(13px, 2.2vw, 15px);
-  color: #d8b8a0; font-weight: 300; line-height: 2; letter-spacing: 0.03em;
-  text-align: left; opacity: 0; transition: opacity 1.5s ease 0.5s;
-}
-.glass-content.visible { opacity: 1; }
-.glass-content p { margin: 3% 0; }
-.glass-content .opening { font-style: italic; margin-bottom: 4%; }
-.glass-content .closing { margin-top: 5%; font-style: italic; }
-.glass-content .signature { font-size: 0.9em; opacity: 0.8; }
 
-.play-btn {
-  position: absolute; z-index: 50; top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  background: linear-gradient(135deg, rgba(255,200,170,0.2), rgba(255,160,130,0.1));
-  border: 1px solid rgba(255,200,170,0.3); border-radius: 50%;
-  width: 80px; height: 80px; cursor: pointer; display: flex;
-  align-items: center; justify-content: center;
-  backdrop-filter: blur(10px); transition: all 0.3s ease;
-  box-shadow: 0 0 40px rgba(255,180,150,0.2);
+.letter-body {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  line-height: 2;
+  font-weight: 300;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: opacity 2s ease 1.2s, transform 2s ease 1.2s;
+  white-space: pre-line;
 }
-.play-btn:hover { transform: translate(-50%,-50%) scale(1.1); box-shadow: 0 0 60px rgba(255,180,150,0.4); }
-.play-btn svg { fill: rgba(255,220,200,0.8); margin-left: 4px; }
-.play-btn.hidden { display: none; }
+
+.letter-body em {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.letter-body strong {
+  font-weight: 600;
+}
+
+/* Glow overlay */
+.glow-overlay {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle, rgba(255,200,180,0.9) 0%, rgba(255,220,210,0.95) 40%, rgba(255,240,235,1) 100%);
+  opacity: 0;
+  transition: opacity 2s ease;
+  pointer-events: none;
+}
+
+/* Walking animation */
+@keyframes walkCycle {
+  0%, 100% { transform: rotate(15deg); }
+  50% { transform: rotate(-15deg); }
+}
+
+@keyframes walkCycleR {
+  0%, 100% { transform: rotate(-15deg); }
+  50% { transform: rotate(15deg); }
+}
+
+.walking .stick-leg-l { animation: walkCycle 0.6s ease-in-out infinite; }
+.walking .stick-leg-r { animation: walkCycleR 0.6s ease-in-out infinite; }
+
+/* Holding arms */
+.holding .stick-arm-l { transform: rotate(50deg); }
+.holding .stick-arm-r { transform: rotate(-50deg); }
+
+@keyframes floatPetal {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  15% { opacity: 0.7; }
+  85% { opacity: 0.5; }
+  100% { transform: translateY(100%) rotate(180deg); opacity: 0; }
+}
+
+@keyframes particleFall {
+  0% { opacity: 0.8; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(40px); }
+}
 
 .replay-btn {
-  position: absolute; z-index: 50; bottom: 8%; left: 50%;
-  transform: translateX(-50%); opacity: 0; pointer-events: none;
-  background: linear-gradient(135deg, rgba(255,200,170,0.15), rgba(255,160,130,0.08));
-  border: 1px solid rgba(255,200,170,0.25); border-radius: 30px;
-  padding: 12px 28px; cursor: pointer; color: #f0d0c0;
-  font-family: 'Quicksand', sans-serif; font-size: 14px; letter-spacing: 0.1em;
-  backdrop-filter: blur(10px); transition: all 0.5s ease;
+  position: absolute;
+  bottom: 20px; right: 20px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(180,120,120,0.3);
+  background: rgba(255,255,255,0.5);
+  color: #9a6b6b;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 1s ease, background 0.3s ease;
+  backdrop-filter: blur(4px);
+  z-index: 100;
 }
-.replay-btn.visible { opacity: 1; pointer-events: auto; }
-.replay-btn:hover { background: linear-gradient(135deg, rgba(255,200,170,0.25), rgba(255,160,130,0.15)); }
+.replay-btn:hover { background: rgba(255,255,255,0.8); }
 </style>
   <style>body { box-sizing: border-box; }</style>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js" type="text/javascript"></script>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
- <body class="h-full">
-  <div class="scene-container" id="app">
-   <canvas id="canvas"></canvas>
-   <div class="text-overlay" id="text1" style="top:35%">
-    <p class="scene-text" id="openingText">"What happens when something real… gets missed at first?"</p>
-   </div>
-   <div class="text-overlay" id="textMiss" style="bottom:18%">
-    <p class="miss-text" id="missText"></p>
-   </div>
-   <div class="text-overlay" id="textFinal" style="top:30%">
-    <p class="scene-text">"…until someone finally sees it."</p>
-   </div>
-   <div class="glass-card" id="glassCard">
-    <div class="glass-title" id="letterTitle">
-     Day 3 &amp; Day 4 — Who You Are
+ <body class="h-full" style="background: linear-gradient(135deg, #fdf2f0 0%, #fce8e4 30%, #f8e0db 60%, #f5ddd6 100%);">
+  <div id="app" class="scene-canvas"><!-- Background gradient shifts -->
+   <div id="bgShift" style="position:absolute;inset:0;opacity:0;transition:opacity 3s ease;background:linear-gradient(135deg,#fff5f0,#ffe8e0,#ffd6cc);"></div><!-- Particles container -->
+   <div id="particles" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div><!-- Petals container -->
+   <div id="petals" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div><!-- Girl figure -->
+   <div id="girl" class="stick-figure holding walking" style="right:10%;opacity:0;">
+    <div class="stick-head" style="border-color:#8b6b6b;"></div>
+    <div class="stick-body" style="background:#8b6b6b;"></div>
+    <div class="stick-arms">
+     <div class="stick-arm-l" style="background:#8b6b6b;"></div>
+     <div class="stick-arm-r" style="background:#8b6b6b;"></div>
+     <div class="heart-container">
+      <div class="glass-heart">
+       <div class="heart-shape">
+        ♥
+       </div>
+       <div class="heart-crack"></div>
+       <div class="heart-crack2"></div>
+      </div>
+     </div>
     </div>
-    <div class="glass-divider"></div>
-    <div class="glass-subtitle" id="letterSubtitle">
-     The things people don't notice right away
+    <div class="stick-legs">
+     <div class="stick-leg-l" style="background:#8b6b6b;"></div>
+     <div class="stick-leg-r" style="background:#8b6b6b;"></div>
     </div>
-    <div class="glass-divider"></div>
-    <div class="glass-content" id="glassContent">
-     <p class="opening" id="letterOpening">My Dearest,</p>
-     <p>One thing I've found myself doing, without even realizing it… is trying to understand you.</p>
-     <p>To read you.</p>
-     <p>Every little detail.<br>
-       Every movement.<br>
-       Every quiet reaction.</p>
-     <p>And somehow… every time I think I've figured you out—<br>
-       you surprise me again.</p>
-     <p>Not in a loud way.<br>
-       Not in a way that demands attention.</p>
-     <p>But in the way your personality quietly reveals itself…<br>
-       and somehow says more than words ever could.</p>
-     <p>Even the way you speak—<br>
-       you don't say too much,<br>
-       yet it never feels like something is missing.</p>
-     <p>It's enough.<br>
-       You are enough.</p>
-     <p>There's something else I noticed too.</p>
-     <p>Whenever I talk to someone,<br>
-       there's always this small tension in me…</p>
-     <p>What if they don't understand me?<br>
-       What if I say the wrong thing?</p>
-     <p>But with you…</p>
-     <p>that feeling disappears.</p>
-     <p>You understand me so easily,<br>
-       so naturally,<br>
-       like it was never something I had to worry about in the first place.</p>
-     <p>And that… is rare.</p>
-     <p>But the part that stays with me the most—</p>
-     <p>is your kindness.</p>
-     <p>The way you treat people.<br>
-       The way you carry softness without weakness.<br>
-       The way you care… even when no one is asking you to.</p>
-     <p>It's not something you try to show.<br>
-       It's just who you are.</p>
-     <p>Even in small moments—<br>
-       if I say something wrong,<br>
-       you don't ignore it.</p>
-     <p>You either gently correct me…<br>
-       or I can see it in your reaction—<br>
-       like your heart simply refuses to accept anything unkind.</p>
-     <p>And honestly…</p>
-     <p>that part of you?</p>
-     <p>I really, really like it.</p>
-     <p>Because it tells me something important.</p>
-     <p>That your heart isn't just kind—<br>
-       it's real.</p>
-     <p>And in a world where people pretend so much…</p>
-     <p>that makes you rare.</p>
-     <p class="closing" id="letterClosing">Quietly certain about you,</p>
-     <p class="signature" id="letterSignature">Always yours</p>
+   </div><!-- Boy figure -->
+   <div id="boy" class="stick-figure walking" style="right:0%;opacity:0;">
+    <div class="stick-head" style="border-color:#6b7b8b;"></div>
+    <div class="stick-body" style="background:#6b7b8b;"></div>
+    <div class="stick-arms">
+     <div class="stick-arm-l" style="background:#6b7b8b;"></div>
+     <div class="stick-arm-r" style="background:#6b7b8b;"></div>
     </div>
-   </div><button class="play-btn" id="playBtn" aria-label="Play animation">
-    <svg width="28" height="32" viewbox="0 0 28 32">
-     <polygon points="4,0 28,16 4,32" />
-    </svg></button> <button class="replay-btn" id="replayBtn">✦ Watch Again ✦</button>
+    <div class="stick-legs">
+     <div class="stick-leg-l" style="background:#6b7b8b;"></div>
+     <div class="stick-leg-r" style="background:#6b7b8b;"></div>
+    </div>
+   </div><!-- Glow overlay for transformation -->
+   <div id="glowOverlay" class="glow-overlay"></div><!-- Letter -->
+   <div id="letterContainer" class="letter-container">
+    <div class="letter-scroll">
+     <div id="letterTitle" class="letter-title" style="color:#9a6060;">
+      Day 5 — Your Strength
+     </div>
+     <div id="letterBody" class="letter-body" style="color:#6b5050;">
+      There's something I understand now… something I didn't fully see before. <strong>You're strong.</strong> Not in the loud way people talk about— but in the quiet way… <em>the real way.</em> The kind of strength it takes to carry something you haven't fully let go of. I see it. The way part of you still feels something… even after everything. The way you never got the closure you deserved. The way some emotions don't just disappear just because time has passed. And still… you keep going. <em>That's not weakness. That's strength.</em> I won't lie… At first, it confused me. Maybe even disturbed me. Not because of what you feel— but because I didn't know where I stood. But now I understand something. I don't love you just because you're with me. I love you because… <strong>you're the person I want to spend my life with.</strong> Not a perfect version of you. Not a version without a past. But <em>you</em>… exactly as you are. And I think… <em>that's what makes this real.</em>
+     </div>
+    </div>
+   </div><!-- Replay --> <button id="replayBtn" class="replay-btn" aria-label="Replay animation">↻ Replay</button>
   </div>
   <script>
 const defaultConfig = {
-  opening_text: '"What happens when something real… gets missed at first?"',
-  letter_title: 'Day 3 & Day 4 — Who You Are',
-  letter_subtitle: 'The things people don\'t notice right away',
-  letter_opening: 'My Dearest,',
-  letter_closing: 'Quietly certain about you,',
-  letter_signature: 'Always yours',
-  bg_color: '#1a0f0a',
-  accent_color: '#ff9e7a',
-  text_color: '#f5e6d8',
+  letter_title: 'Day 5 — Your Strength',
+  background_color: '#fdf2f0',
+  text_color: '#6b5050',
+  accent_color: '#9a6060',
+  heart_color: '#ff828c',
+  surface_color: '#fff5f0',
   font_family: 'Cormorant Garamond',
-  font_size: 16
+  font_size: 17
 };
 
-// Audio context for gentle tones
-let audioCtx = null;
-function initAudio() {
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-function playTone(freq, dur, vol=0.03, type='sine') {
-  if (!audioCtx) return;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.setValueAtTime(0, audioCtx.currentTime);
-  g.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + dur*0.3);
-  g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + dur);
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start(); o.stop(audioCtx.currentTime + dur);
-}
-function playChord(freqs, dur, vol=0.02) {
-  freqs.forEach(f => playTone(f, dur, vol));
-}
-function startAmbient() {
-  // Ambient sound disabled
-}
+let animationTimer = null;
+let particleInterval = null;
+let petalInterval = null;
 
-// Canvas setup
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let W, H, animating = false, startTime = 0;
-
-function resize() {
-  const r = window.devicePixelRatio || 1;
-  const el = canvas.parentElement;
-  W = el.clientWidth; H = el.clientHeight;
-  canvas.width = W * r; canvas.height = H * r;
-  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-  ctx.setTransform(r, 0, 0, r, 0, 0);
-}
-window.addEventListener('resize', resize);
-resize();
-
-// Particles
-class Particle {
-  constructor(x, y, type='sparkle') {
-    this.x = x; this.y = y; this.type = type;
-    this.vx = (Math.random()-0.5)*0.5;
-    this.vy = -Math.random()*0.5 - 0.2;
-    this.life = 1; this.decay = 0.002 + Math.random()*0.003;
-    this.size = Math.random()*3+1;
-    this.hue = 20 + Math.random()*30;
-    this.brightness = 70 + Math.random()*30;
-  }
-  update() {
-    this.x += this.vx; this.y += this.vy;
-    this.vy += (this.type==='petal'?0.01:-0.005);
-    if (this.type==='petal') this.vx += Math.sin(this.y*0.02)*0.02;
-    this.life -= this.decay;
-  }
-  draw() {
-    if (this.life<=0) return;
-    ctx.save(); ctx.globalAlpha = this.life * 0.7;
-    if (this.type==='sparkle') {
-      const g = ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.size*2);
-      g.addColorStop(0,`hsla(${this.hue},80%,${this.brightness}%,1)`);
-      g.addColorStop(1,`hsla(${this.hue},80%,${this.brightness}%,0)`);
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(this.x,this.y,this.size*2,0,Math.PI*2); ctx.fill();
-    } else if (this.type==='petal') {
-      ctx.translate(this.x,this.y); ctx.rotate(this.y*0.05);
-      ctx.fillStyle=`hsla(${this.hue-5},60%,80%,0.6)`;
-      ctx.beginPath(); ctx.ellipse(0,0,this.size*1.5,this.size*3,0,0,Math.PI*2); ctx.fill();
-    } else if (this.type==='lily') {
-      ctx.translate(this.x,this.y); ctx.rotate(this.x*0.01);
-      ctx.fillStyle=`hsla(${this.hue},50%,90%,0.7)`;
-      for(let i=0;i<5;i++){
-        ctx.beginPath(); ctx.ellipse(0,-this.size*2,this.size,this.size*2.5,0,0,Math.PI*2); ctx.fill();
-        ctx.rotate(Math.PI*2/5);
-      }
-      ctx.fillStyle=`hsla(40,70%,80%,0.8)`;
-      ctx.beginPath(); ctx.arc(0,0,this.size*0.5,0,Math.PI*2); ctx.fill();
-    } else if (this.type==='burst') {
-      const g = ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.size*3);
-      g.addColorStop(0,`hsla(${this.hue},90%,85%,1)`);
-      g.addColorStop(1,`hsla(${this.hue},90%,85%,0)`);
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(this.x,this.y,this.size*3,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-  }
-}
-
-let particles = [];
-function spawnAmbient() {
-  if (Math.random()<0.15) particles.push(new Particle(Math.random()*W, Math.random()*H,'sparkle'));
-  if (Math.random()<0.05) {
-    const p = new Particle(Math.random()*W, -10, 'petal');
-    p.vy = 0.3+Math.random()*0.5; p.decay=0.001; particles.push(p);
-  }
-}
-
-// Archer & Target state
-let archerX, archerY, targetX, targetY, targetBaseX, targetBaseY;
-let arrowX, arrowY, arrowActive=false, arrowAngle=0;
-let attempt=0, scenePhase='idle';
-let phaseStart=0, targetDodge=0;
-
-function resetPositions() {
-  archerX = W*0.75; archerY = H*0.55;
-  targetBaseX = W*0.25; targetBaseY = H*0.55;
-  targetX = targetBaseX; targetY = targetBaseY;
-  arrowActive=false; attempt=0; scenePhase='idle'; targetDodge=0;
-}
-
-function drawArcher(x, y, aiming, drawBack) {
-  ctx.save(); ctx.translate(x, y);
-  const sc = Math.min(W,H)*0.003;
-  // Glow
-  ctx.shadowColor='rgba(255,200,170,0.3)'; ctx.shadowBlur=20;
-  ctx.strokeStyle='#f0d0c0'; ctx.lineWidth=sc*0.7; ctx.lineCap='round';
-  // Head
-  ctx.beginPath(); ctx.arc(0,-30*sc,6*sc,0,Math.PI*2); ctx.stroke();
-  // Hair flowing
-  ctx.beginPath(); ctx.moveTo(-4*sc,-36*sc);
-  ctx.quadraticCurveTo(-10*sc,-28*sc,-8*sc,-18*sc); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(2*sc,-36*sc);
-  ctx.quadraticCurveTo(8*sc,-30*sc,6*sc,-18*sc); ctx.stroke();
-  // Body
-  ctx.beginPath(); ctx.moveTo(0,-24*sc); ctx.lineTo(0,0); ctx.stroke();
-  // Skirt
-  ctx.beginPath(); ctx.moveTo(0,0);
-  ctx.lineTo(-8*sc,18*sc); ctx.moveTo(0,0); ctx.lineTo(8*sc,18*sc);
-  ctx.moveTo(-4*sc,9*sc); ctx.lineTo(4*sc,9*sc); ctx.stroke();
-  // Legs
-  ctx.beginPath(); ctx.moveTo(-8*sc,18*sc); ctx.lineTo(-8*sc,28*sc);
-  ctx.moveTo(8*sc,18*sc); ctx.lineTo(8*sc,28*sc); ctx.stroke();
-
-  if (aiming) {
-    // Bow arm
-    ctx.beginPath(); ctx.moveTo(0,-16*sc); ctx.lineTo(-18*sc,-16*sc); ctx.stroke();
-    // Bow
-    ctx.beginPath(); ctx.arc(-18*sc,-16*sc,10*sc,-Math.PI*0.4,Math.PI*0.4); ctx.stroke();
-    // Draw arm
-    const dx = drawBack ? 12 : 6;
-    ctx.beginPath(); ctx.moveTo(0,-16*sc); ctx.lineTo(dx*sc,-16*sc); ctx.stroke();
-    // Arrow with heart
-    if (!arrowActive) {
-      ctx.beginPath(); ctx.moveTo(-28*sc,-16*sc); ctx.lineTo(dx*sc,-16*sc); ctx.stroke();
-      drawHeart(-30*sc, -16*sc, sc*2.5);
-    }
-  } else {
-    ctx.beginPath(); ctx.moveTo(0,-16*sc); ctx.lineTo(-10*sc,-8*sc);
-    ctx.moveTo(0,-16*sc); ctx.lineTo(10*sc,-10*sc); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawHeart(x, y, s) {
-  ctx.save(); ctx.translate(x,y);
-  ctx.fillStyle='rgba(255,120,100,0.8)';
-  ctx.shadowColor='rgba(255,100,80,0.6)'; ctx.shadowBlur=15;
-  ctx.beginPath();
-  ctx.moveTo(0,-s*0.3);
-  ctx.bezierCurveTo(-s*0.5,-s*1.2,-s*1.5,-s*0.3,0,s*0.8);
-  ctx.bezierCurveTo(s*1.5,-s*0.3,s*0.5,-s*1.2,0,-s*0.3);
-  ctx.fill(); ctx.restore();
-}
-
-function drawTarget(x, y, hit) {
-  ctx.save(); ctx.translate(x,y);
-  const sc = Math.min(W,H)*0.003;
-  ctx.shadowColor='rgba(255,200,170,0.3)'; ctx.shadowBlur=15;
-  const rings = [18,13,8,3];
-  const colors = ['rgba(255,200,180,0.15)','rgba(255,180,150,0.2)','rgba(255,160,130,0.3)','rgba(255,120,100,0.5)'];
-  rings.forEach((r,i) => {
-    ctx.fillStyle = colors[i]; ctx.strokeStyle='rgba(255,200,170,0.3)'; ctx.lineWidth=0.5;
-    ctx.beginPath(); ctx.arc(0,0,r*sc,0,Math.PI*2); ctx.fill(); ctx.stroke();
-  });
-  // Stand
-  ctx.strokeStyle='rgba(240,200,180,0.4)'; ctx.lineWidth=sc*0.5;
-  ctx.beginPath(); ctx.moveTo(0,18*sc); ctx.lineTo(-6*sc,32*sc);
-  ctx.moveTo(0,18*sc); ctx.lineTo(6*sc,32*sc); ctx.stroke();
-  ctx.restore();
-}
-
-function drawArrow(x, y, sc) {
-  ctx.save(); ctx.translate(x,y);
-  ctx.strokeStyle='#f0d0c0'; ctx.lineWidth=sc*0.6; ctx.lineCap='round';
-  ctx.shadowColor='rgba(255,200,170,0.4)'; ctx.shadowBlur=10;
-  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(25*sc,0); ctx.stroke();
-  drawHeart(-2*sc, 0, sc*2);
-  ctx.restore();
-}
-
-function drawBackground(t) {
-  // Warm gradient
-  const g = ctx.createRadialGradient(W*0.5,H*0.4,0,W*0.5,H*0.5,H*0.8);
-  g.addColorStop(0,'#2a1810');
-  g.addColorStop(0.5,'#1a0f0a');
-  g.addColorStop(1,'#0d0705');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  // Soft light orbs
-  for(let i=0;i<3;i++){
-    const ox = W*(0.2+i*0.3)+Math.sin(t*0.0003+i)*30;
-    const oy = H*(0.3+i*0.15)+Math.cos(t*0.0004+i)*20;
-    const og = ctx.createRadialGradient(ox,oy,0,ox,oy,H*0.25);
-    og.addColorStop(0,'rgba(255,180,150,0.04)');
-    og.addColorStop(1,'rgba(255,180,150,0)');
-    ctx.fillStyle=og; ctx.fillRect(0,0,W,H);
-  }
-}
-
-// Scene timeline - expanded for full letter reveal
-const scenes = [
-  { start:0, end:4000, id:'scene1' },
-  { start:4000, end:6000, id:'scene2' },
-  { start:6000, end:9000, id:'scene3' },
-  { start:9000, end:12000, id:'scene4' },
-  { start:12000, end:15000, id:'scene5' },
-  { start:15000, end:20000, id:'scene6' },
-  { start:20000, end:23000, id:'scene7' },
-  { start:23000, end:27000, id:'scene8' },
-  { start:27000, end:32000, id:'scene9' },
-  { start:32000, end:42000, id:'scene10' },
-  { start:42000, end:48000, id:'scene11' }
-];
-
-let explosionParticles = [];
-let lilyParticles = [];
-let showArcher = false, showTarget = false, hitDone = false;
-
-function getScene(elapsed) {
-  for (const s of scenes) if (elapsed >= s.start && elapsed < s.end) return s;
-  return scenes[scenes.length-1];
-}
-
-function fireArrow(attemptNum) {
-  arrowActive = true;
-  arrowX = archerX - W*0.04;
-  arrowY = archerY - H*0.03;
-}
-
-function update(elapsed) {
-  const scene = getScene(elapsed);
-  const st = elapsed - scene.start;
-  const dur = scene.end - scene.start;
-  const prog = Math.min(st/dur, 1);
-
-  // Hide all overlays first
-  document.getElementById('text1').classList.remove('visible');
-  document.getElementById('textMiss').classList.remove('visible');
-  document.getElementById('textFinal').classList.remove('visible');
-  document.getElementById('glassCard').classList.remove('visible');
-
-  const sc = Math.min(W,H)*0.003;
-
-  switch(scene.id) {
-    case 'scene1':
-      document.getElementById('text1').classList.toggle('visible', prog>0.15);
-      showArcher=false; showTarget=false;
-      if (st<500) playTone(392, 3, 0.01);
-      break;
-
-    case 'scene2':
-      showArcher = prog > 0.3;
-      showTarget = prog > 0.5;
-      attempt=0; arrowActive=false; hitDone=false;
-      explosionParticles=[]; lilyParticles=[];
-      if (st<200) playTone(440, 2, 0.008);
-      break;
-
-    case 'scene3':
-      showArcher=true; showTarget=true;
-      if (!arrowActive && st>500) fireArrow(1);
-      if (arrowActive) {
-        arrowX -= W*0.006;
-        targetDodge = -H*0.08;
-        if (arrowX < targetX - 30) {
-          arrowActive=false;
-          document.getElementById('missText').textContent='Too early…';
-          document.getElementById('textMiss').classList.add('visible');
-          if(st>1500&&st<1700) playTone(293.7,1.5,0.015);
-        }
-      }
-      targetY = targetBaseY + targetDodge * Math.min((st-800)/600,1);
-      break;
-
-    case 'scene4':
-      showArcher=true; showTarget=true; targetDodge=0;
-      targetY = targetBaseY;
-      if (!arrowActive && st>500) { arrowActive=true; arrowX=archerX-W*0.04; arrowY=archerY-H*0.03; }
-      if (arrowActive) {
-        arrowX -= W*0.005;
-        if (st>1200) targetDodge = H*0.07;
-        targetY = targetBaseY + targetDodge * Math.min(Math.max((st-1200)/400,0),1);
-        if (arrowX < targetX - 30) {
-          arrowActive=false;
-          document.getElementById('missText').textContent='Too misunderstood…';
-          document.getElementById('textMiss').classList.add('visible');
-          if(st>1800&&st<2000) playTone(261.6,1.5,0.015);
-        }
-      }
-      break;
-
-    case 'scene5':
-      showArcher=true; showTarget=true; targetDodge=0;
-      targetY = targetBaseY;
-      if (!arrowActive && st>500) { arrowActive=true; arrowX=archerX-W*0.04; arrowY=archerY-H*0.03; }
-      if (arrowActive) {
-        arrowX -= W*0.005;
-        if (st>1000) targetDodge = -H*0.06;
-        targetY = targetBaseY + targetDodge * Math.min(Math.max((st-1000)/500,0),1);
-        if (arrowX < targetX - 30) {
-          arrowActive=false;
-          document.getElementById('missText').textContent='Too unnoticed…';
-          document.getElementById('textMiss').classList.add('visible');
-          if(st>1800&&st<2000) playTone(246.9,1.5,0.015);
-        }
-      }
-      break;
-
-    case 'scene6':
-      showArcher=true; showTarget=true;
-      targetY = targetBaseY; targetDodge=0;
-      document.getElementById('textFinal').classList.toggle('visible', prog>0.2 && prog<0.85);
-      // Slow arrow
-      if (!arrowActive && st>2000) { arrowActive=true; arrowX=archerX-W*0.04; arrowY=archerY-H*0.03; }
-      if (arrowActive) {
-        arrowX -= W*0.002; // slow motion
-        arrowY = archerY - H*0.03; // aim at target center
-      }
-      if(st>1500&&st<1800) playChord([329.6,392,493.9],3,0.015);
-      break;
-
-    case 'scene7':
-      showArcher=true; showTarget=true;
-      // Arrow connects
-      if (arrowActive) arrowX -= W*0.004;
-      if (arrowActive && arrowX <= targetX + 10) {
-        arrowActive = false;
-        if (!hitDone) {
-          hitDone = true;
-          playChord([261.6,329.6,392,523.2],4,0.025);
-          // Explosion
-          for(let i=0;i<60;i++){
-            const p = new Particle(targetX,targetY,'burst');
-            p.vx=(Math.random()-0.5)*4; p.vy=(Math.random()-0.5)*4;
-            p.decay=0.008; p.size=Math.random()*4+2;
-            explosionParticles.push(p);
-          }
-          for(let i=0;i<20;i++){
-            const p = new Particle(targetX+(Math.random()-0.5)*40, targetY+(Math.random()-0.5)*40,'lily');
-            p.vx=(Math.random()-0.5)*2; p.vy=(Math.random()-0.5)*2;
-            p.decay=0.003; p.size=Math.random()*3+2;
-            lilyParticles.push(p);
-          }
-          for(let i=0;i<20;i++){
-            const p = new Particle(archerX+(Math.random()-0.5)*30, archerY+(Math.random()-0.5)*30,'burst');
-            p.vx=(Math.random()-0.5)*3; p.vy=(Math.random()-0.5)*3;
-            p.decay=0.006; p.size=Math.random()*3+2;
-            explosionParticles.push(p);
-          }
-        }
-      }
-      if (hitDone && prog>0.4) { showArcher=false; showTarget=false; }
-      explosionParticles.forEach(p=>{p.update();p.draw();});
-      explosionParticles = explosionParticles.filter(p=>p.life>0);
-      lilyParticles.forEach(p=>{p.update();p.draw();});
-      break;
-
-    case 'scene8':
-      showArcher=false; showTarget=false;
-      // Lilies swirl toward center
-      lilyParticles.forEach(p=>{
-        const cx=W*0.5, cy=H*0.5;
-        p.vx += (cx-p.x)*0.001; p.vy += (cy-p.y)*0.001;
-        p.vx *= 0.99; p.vy *= 0.99;
-        p.update(); p.draw();
-      });
-      // Add more swirling lilies
-      if(Math.random()<0.1){
-        const ang=Math.random()*Math.PI*2;
-        const p=new Particle(W*0.5+Math.cos(ang)*W*0.4, H*0.5+Math.sin(ang)*H*0.4,'lily');
-        p.decay=0.002; p.size=Math.random()*3+1.5; lilyParticles.push(p);
-      }
-      if(st<300) playChord([293.7,370,440,554.4],4,0.02);
-      break;
-
-    case 'scene9':
-      showArcher=false; showTarget=false;
-      document.getElementById('glassCard').classList.toggle('visible', prog>0.15);
-      document.getElementById('glassContent').classList.toggle('visible', prog>0.3);
-      lilyParticles.forEach(p=>{p.update();p.draw();});
-      lilyParticles = lilyParticles.filter(p=>p.life>0);
-      if(st<500) playChord([261.6,329.6,392,523.2],5,0.018);
-      // Frame glow
-      if(prog>0.2) {
-        ctx.save(); ctx.globalAlpha=Math.min((prog-0.2)*2,0.15);
-        ctx.strokeStyle='rgba(255,200,170,0.3)'; ctx.lineWidth=2;
-        ctx.shadowColor='rgba(255,180,150,0.4)'; ctx.shadowBlur=30;
-        const m=W*0.08;
-        ctx.strokeRect(m, H*0.15, W-m*2, H*0.7);
-        ctx.restore();
-      }
-      break;
-
-    case 'scene10':
-      showArcher=false; showTarget=false;
-      document.getElementById('glassCard').classList.add('visible');
-      document.getElementById('glassContent').classList.add('visible');
-      // Falling petals
-      if(Math.random()<0.15){
-        const p=new Particle(Math.random()*W,-10,'petal');
-        p.vy=0.4+Math.random()*0.4; p.decay=0.0008; particles.push(p);
-      }
-      if(st<300) playTone(523.2,4,0.01);
-      break;
-
-    case 'scene11':
-      showArcher=false; showTarget=false;
-      document.getElementById('glassCard').classList.add('visible');
-      document.getElementById('glassContent').classList.add('visible');
-      document.getElementById('replayBtn').classList.toggle('visible', prog>0.4);
-      // Continuous petals fall
-      if(Math.random()<0.15){
-        const p=new Particle(Math.random()*W,-10,'petal');
-        p.vy=0.3+Math.random()*0.3;p.decay=0.0008;particles.push(p);
-      }
-      // Soft sustained tone
-      if(st===0) playTone(261.6,6,0.008);
-      break;
-  }
-}
-
-function render(timestamp) {
-  if (!animating) return;
-  const elapsed = timestamp - startTime;
-  ctx.clearRect(0,0,W,H);
-  drawBackground(elapsed);
-  spawnAmbient();
-
-  particles.forEach(p=>{p.update();p.draw();});
-  particles = particles.filter(p=>p.life>0);
-
-  update(elapsed);
-
-  const sc = Math.min(W,H)*0.003;
-
-  if (showTarget) drawTarget(targetX, targetY, hitDone);
-  if (showArcher) drawArcher(archerX, archerY, true, !arrowActive);
-  if (arrowActive) drawArrow(arrowX, arrowY, sc);
-
-  if (elapsed < 48000) {
-    requestAnimationFrame(render);
-  } else {
-    // Keep ambient going
-    const ambient = (ts) => {
-      if (!animating) return;
-      ctx.clearRect(0,0,W,H);
-      drawBackground(ts);
-      spawnAmbient();
-      particles.forEach(p=>{p.update();p.draw();});
-      particles=particles.filter(p=>p.life>0);
-      if(Math.random()<0.08){
-        const p=new Particle(Math.random()*W,-10,'petal');
-        p.vy=0.3+Math.random()*0.3;p.decay=0.0008;particles.push(p);
-      }
-      requestAnimationFrame(ambient);
-    };
-    requestAnimationFrame(ambient);
-  }
-}
-
-function startAnimation() {
-  resetPositions();
-  particles = []; explosionParticles = []; lilyParticles = [];
-  hitDone = false;
-  document.getElementById('text1').classList.remove('visible');
-  document.getElementById('textMiss').classList.remove('visible');
-  document.getElementById('textFinal').classList.remove('visible');
-  document.getElementById('glassCard').classList.remove('visible');
-  document.getElementById('replayBtn').classList.remove('visible');
-  animating = true;
-  startTime = performance.now();
-  startAmbient();
-  requestAnimationFrame(render);
-}
-
-document.getElementById('playBtn').addEventListener('click', () => {
-  initAudio();
-  document.getElementById('playBtn').classList.add('hidden');
-  startAnimation();
-});
-
-document.getElementById('replayBtn').addEventListener('click', () => {
-  startAnimation();
-});
-
-// Draw initial background
-drawBackground(0);
-spawnAmbient();
-
-// Element SDK
 function applyConfig(config) {
   const c = { ...defaultConfig, ...config };
-  document.getElementById('openingText').textContent = c.opening_text;
-  document.getElementById('letterTitle').textContent = c.letter_title;
-  document.getElementById('letterSubtitle').textContent = c.letter_subtitle;
-  document.getElementById('letterOpening').textContent = c.letter_opening;
-  document.getElementById('letterClosing').textContent = c.letter_closing;
-  document.getElementById('letterSignature').textContent = c.letter_signature;
+  const font = c.font_family || defaultConfig.font_family;
+  const baseFont = 'Georgia, serif';
 
-  document.querySelectorAll('.scene-text').forEach(el => {
-    el.style.fontFamily = `${c.font_family}, serif`;
-    el.style.color = c.text_color;
-  });
-  document.querySelectorAll('.miss-text, .glass-subtitle, .replay-btn').forEach(el => {
-    el.style.fontFamily = `Quicksand, ${c.font_family}, sans-serif`;
-  });
-  document.querySelector('.glass-title').style.fontFamily = `${c.font_family}, serif`;
-  document.querySelector('.glass-content').style.fontFamily = `${c.font_family}, serif`;
-  document.querySelector('.glass-content').style.color = c.text_color;
+  document.getElementById('letterTitle').textContent = c.letter_title || defaultConfig.letter_title;
+  document.getElementById('letterTitle').style.color = c.accent_color;
+  document.getElementById('letterBody').style.color = c.text_color;
+  document.getElementById('letterBody').style.fontFamily = `${font}, ${baseFont}`;
+  document.getElementById('letterBody').style.fontSize = `${c.font_size}px`;
+  document.getElementById('letterTitle').style.fontFamily = `Dancing Script, ${font}, cursive`;
+  document.getElementById('letterTitle').style.fontSize = `${c.font_size * 1.9}px`;
 
-  const base = c.font_size;
-  document.querySelectorAll('.scene-text').forEach(el => el.style.fontSize = `${base * 1.6}px`);
-  document.querySelectorAll('.miss-text').forEach(el => el.style.fontSize = `${base * 1.1}px`);
-  document.querySelector('.glass-title').style.fontSize = `${base * 2.5}px`;
-  document.querySelector('.glass-subtitle').style.fontSize = `${base * 0.9}px`;
-  document.querySelector('.glass-content').style.fontSize = `${base * 0.9}px`;
+  document.body.style.background = `linear-gradient(135deg, ${c.background_color} 0%, ${c.surface_color} 100%)`;
 }
 
-window.elementSdk.init({
-  defaultConfig,
-  onConfigChange: async (config) => applyConfig(config),
-  mapToCapabilities: (config) => ({
-    recolorables: [
-      { get: () => config.bg_color || defaultConfig.bg_color, set: v => { config.bg_color = v; window.elementSdk.setConfig({ bg_color: v }); } },
-      { get: () => config.accent_color || defaultConfig.accent_color, set: v => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
-      { get: () => config.text_color || defaultConfig.text_color, set: v => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } }
-    ],
-    borderables: [],
-    fontEditable: {
-      get: () => config.font_family || defaultConfig.font_family,
-      set: v => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
-    },
-    fontSizeable: {
-      get: () => config.font_size || defaultConfig.font_size,
-      set: v => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
-    }
-  }),
-  mapToEditPanelValues: (config) => new Map([
-    ['opening_text', config.opening_text || defaultConfig.opening_text],
-    ['letter_title', config.letter_title || defaultConfig.letter_title],
-    ['letter_subtitle', config.letter_subtitle || defaultConfig.letter_subtitle],
-    ['letter_opening', config.letter_opening || defaultConfig.letter_opening],
-    ['letter_closing', config.letter_closing || defaultConfig.letter_closing],
-    ['letter_signature', config.letter_signature || defaultConfig.letter_signature]
-  ])
+// Animation engine
+function runAnimation() {
+  // Reset
+  clearTimeout(animationTimer);
+  clearInterval(particleInterval);
+  clearInterval(petalInterval);
+  const girl = document.getElementById('girl');
+  const boy = document.getElementById('boy');
+  const heartShape = document.querySelector('.heart-shape');
+  const glowOverlay = document.getElementById('glowOverlay');
+  const letterContainer = document.getElementById('letterContainer');
+  const letterTitle = document.getElementById('letterTitle');
+  const letterBody = document.getElementById('letterBody');
+  const replayBtn = document.getElementById('replayBtn');
+  const particlesEl = document.getElementById('particles');
+  const petalsEl = document.getElementById('petals');
+
+  particlesEl.innerHTML = '';
+  petalsEl.innerHTML = '';
+  girl.style.opacity = '0';
+  girl.style.right = '10%';
+  girl.classList.add('walking');
+  boy.style.opacity = '0';
+  boy.style.right = '0%';
+  boy.classList.add('walking');
+  heartShape.style.filter = 'drop-shadow(0 0 6px rgba(255,150,150,0.8))';
+  heartShape.style.color = 'rgba(255,130,140,0.7)';
+  glowOverlay.style.opacity = '0';
+  letterContainer.style.opacity = '0';
+  letterTitle.style.opacity = '0';
+  letterTitle.style.transform = 'translateY(15px)';
+  letterBody.style.opacity = '0';
+  letterBody.style.transform = 'translateY(15px)';
+  replayBtn.style.opacity = '0';
+  document.getElementById('bgShift').style.opacity = '0';
+
+  const ms = (s) => s * 1000;
+
+  // Scene 1: Girl appears and walks (0-3s)
+  setTimeout(() => {
+    girl.style.opacity = '1';
+    girl.style.transition = 'right 12s linear, opacity 1.5s ease';
+    girl.style.right = '55%';
+  }, 200);
+
+  // Scene 2: Particles fall from heart (3-6s)
+  setTimeout(() => {
+    girl.style.transition = 'right 15s linear';
+    // Slow her down by not changing target much
+    particleInterval = setInterval(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const girlRect = girl.getBoundingClientRect();
+      p.style.left = (girlRect.left + girlRect.width / 2 + (Math.random() - 0.5) * 10) + 'px';
+      p.style.top = (girlRect.top + 20) + 'px';
+      p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+      p.style.background = `rgba(255,${150 + Math.random()*50},${150 + Math.random()*50},0.8)`;
+      p.style.boxShadow = '0 0 4px rgba(255,180,180,0.6)';
+      p.style.animation = `particleFall ${1 + Math.random()}s ease-out forwards`;
+      particlesEl.appendChild(p);
+      setTimeout(() => p.remove(), 2000);
+    }, 150);
+  }, ms(3));
+
+  // Scene 3: Boy appears (6-9s)
+  setTimeout(() => {
+    boy.style.opacity = '1';
+    boy.style.transition = 'right 9s linear, opacity 1.5s ease';
+    boy.style.right = '48%';
+  }, ms(6));
+
+  // Scene 4: Glance - heart brightens (9-12s)
+  setTimeout(() => {
+    heartShape.style.filter = 'drop-shadow(0 0 12px rgba(255,180,160,0.9))';
+    heartShape.style.color = 'rgba(255,150,155,0.85)';
+    girl.classList.remove('walking');
+    boy.classList.remove('walking');
+  }, ms(9));
+
+  // Scene 5: Stability (12-15s)
+  setTimeout(() => {
+    clearInterval(particleInterval);
+    heartShape.style.filter = 'drop-shadow(0 0 15px rgba(255,200,180,0.9))';
+    heartShape.style.color = 'rgba(255,170,165,0.9)';
+    document.getElementById('bgShift').style.opacity = '0.5';
+  }, ms(12));
+
+  // Scene 6: Transformation (15-18s)
+  setTimeout(() => {
+    glowOverlay.style.opacity = '1';
+    girl.style.opacity = '0';
+    boy.style.opacity = '0';
+
+    // Petals
+    petalInterval = setInterval(() => {
+      const pt = document.createElement('div');
+      pt.className = 'petal';
+      const colors = ['rgba(255,180,180,0.6)','rgba(255,200,190,0.5)','rgba(255,160,170,0.5)','rgba(255,220,210,0.4)'];
+      pt.style.background = colors[Math.floor(Math.random()*colors.length)];
+      pt.style.left = Math.random() * 100 + '%';
+      pt.style.top = '-20px';
+      pt.style.width = (6 + Math.random()*8) + 'px';
+      pt.style.height = (8 + Math.random()*10) + 'px';
+      pt.style.animation = `floatPetal ${4 + Math.random()*3}s ease-in-out forwards`;
+      petalsEl.appendChild(pt);
+      setTimeout(() => pt.remove(), 8000);
+    }, 200);
+  }, ms(15));
+
+  // Scene 7: Letter (18-25s)
+  setTimeout(() => {
+    glowOverlay.style.opacity = '0';
+    letterContainer.style.opacity = '1';
+    letterContainer.style.pointerEvents = 'auto';
+
+    setTimeout(() => {
+      letterTitle.style.opacity = '1';
+      letterTitle.style.transform = 'translateY(0)';
+    }, 500);
+    setTimeout(() => {
+      letterBody.style.opacity = '1';
+      letterBody.style.transform = 'translateY(0)';
+    }, 1200);
+    setTimeout(() => {
+      replayBtn.style.opacity = '1';
+    }, 3000);
+  }, ms(18));
+}
+
+// Replay
+document.getElementById('replayBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  runAnimation();
 });
+
+// SDK init
+if (window.elementSdk) {
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange: async (config) => {
+      applyConfig(config);
+    },
+    mapToCapabilities: (config) => ({
+      recolorables: [
+        { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+        { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+        { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+        { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
+        { get: () => config.heart_color || defaultConfig.heart_color, set: (v) => { config.heart_color = v; window.elementSdk.setConfig({ heart_color: v }); } }
+      ],
+      borderables: [],
+      fontEditable: {
+        get: () => config.font_family || defaultConfig.font_family,
+        set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+      },
+      fontSizeable: {
+        get: () => config.font_size || defaultConfig.font_size,
+        set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+      }
+    }),
+    mapToEditPanelValues: (config) => new Map([
+      ['letter_title', config.letter_title || defaultConfig.letter_title]
+    ])
+  });
+}
+
+applyConfig(defaultConfig);
+runAnimation();
 </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e9380f465af7545',t:'MTc3NTY3NDcwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ebcaaae05f87e19',t:'MTc3NjEwNjMzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
